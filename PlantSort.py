@@ -4,12 +4,14 @@ Created on Fri Sep 29 11:00:20 2023
 
 @author: Sailing587
 """
+import datetime 
 import pyodbc
 import glob
 import cv2
 import matplotlib.pyplot as plt
 from colorthief import ColorThief
 import numpy as np
+import os
 
 
 # Define connection parameters
@@ -191,10 +193,13 @@ def calculate_non_green_percentage(processed_image, white_threshold=200):
         if non_green_percentage > 5:
             print('Rusting on leaves! ')
             print('Remedy by using Neem oil, dusting of Sulphur or rust control fungicides. Climate change: Too much water or too little airflow and sunlight')
-        
-            # data_to_insert_diseases = [
-            #     ('Rusting', 'Remedy by using Neem oil, dusting of Sulphur or rust control fungicides. Climate change: Too much water or too little airflow and sunlight')
-            #     ]
+            
+            now = datetime.datetime.now()
+            print(now.strftime("%d-%m-%y %H:%M:%S"))
+            print (os.path.split(image_path)[-1])
+            data_to_insert_diseases = [
+                 ('Rusting', 'Remedy by using Neem oil, dusting of Sulphur or rust control fungicides. Climate change: Too much water or too little airflow and sunlight', os.path.split(image_path)[-1], now.strftime("%d-%m-%y %H:%M:%S") )
+                 ]
 
     
     #Check for black spots    
@@ -211,10 +216,11 @@ def calculate_non_green_percentage(processed_image, white_threshold=200):
         print('Black ratio: ', black_ratio )
         print('Black spot percentage: ', non_green_percentage)
         print('Can try to wash off with soap and water or increase temperature to kill off disease')
-        
-        # data_to_insert_diseases = [
-        #     ('Black Spots', 'Wash off black spots')
-        #     ]
+        now = datetime.datetime.now()
+        print(now.strftime("%d-%m-%y %H:%M:%S"))
+        data_to_insert_diseases = [
+             ('Black Spots', 'Wash off black spots' , os.path.split(image_path)[-1], now.strftime("%d-%m-%y %H:%M:%S") )
+            ]
     
     #Check for browning
     elif brown_pixel_count > yellow_pixel_count: 
@@ -236,10 +242,21 @@ def calculate_non_green_percentage(processed_image, white_threshold=200):
         if non_green_percentage > 0.7:
             print('Trim brown edges or cut the leaf off Too little moisture in the air (lack of humidity) or Inconsistent watering habits ')
             print('Browning percentage: ', non_green_percentage)
+            now = datetime.datetime.now()
+            print(now.strftime("%d-%m-%y %H:%M:%S"))
             
-        # data_to_insert_diseases = [
-        #     ('Browning', 'Trim off edges')
-        #     ]        
+            data_to_insert_diseases = [
+             ('Browning', 'Trim off edges' , os.path.split(image_path)[-1], now.strftime("%d-%m-%y %H:%M:%S"))
+             ]
+        
+        else:
+            print('Plant is good')
+            now = datetime.datetime.now()
+            print(now.strftime("%d-%m-%y %H:%M:%S"))
+            data_to_insert_diseases = [
+                ('Healthy', 'No remedy needed' , os.path.split(image_path)[-1], now.strftime("%d-%m-%y %H:%M:%S"))
+                ]
+            
         
         
     #Check for yellowing
@@ -257,23 +274,35 @@ def calculate_non_green_percentage(processed_image, white_threshold=200):
         if non_green_percentage > 1:
             print('Yellowing, lack of nutrients (manganese, iron or magnesium)')
             print('Yellowing percentage: ', non_green_percentage)
+            now = datetime.datetime.now()
+            print(now.strftime("%d-%m-%y %H:%M:%S"))
+            data_to_insert_diseases = [
+             ('Yellowing', 'lack of nutrients (manganese, iron or magnesium)', os.path.split(image_path)[-1], now.strftime("%d-%m-%y %H:%M:%S"))
+             ]
+        
+        else:
+            print('Plant is good')
+            now = datetime.datetime.now()
+            print(now.strftime("%d-%m-%y %H:%M:%S"))
+            data_to_insert_diseases = [
+                ('Healthy', 'No remedy needed' , os.path.split(image_path)[-1], now.strftime("%d-%m-%y %H:%M:%S"))
+                ]
             
-        # data_to_insert_diseases = [
-        #     ('Yellowing', 'lack of nutrients (manganese, iron or magnesium)')
-        #     ]
         
             
     else:
         print('Plant is good')
-        # data_to_insert_diseases = [
-        #     ('Healthy', 'No remedy needed')
-        #     ]
+        now = datetime.datetime.now()
+        print(now.strftime("%d-%m-%y %H:%M:%S"))
+        data_to_insert_diseases = [
+            ('Healthy', 'No remedy needed' , os.path.split(image_path)[-1], now.strftime("%d-%m-%y %H:%M:%S"))
+            ]
         
-    sql_insert = "INSERT INTO diseases (Text, Remedy) VALUES (?, ?)"
+    sql_insert = "INSERT INTO diseases (Text, Remedy, Location, DateTime) VALUES (?, ?, ?, ?)"
         
     # Execute the SQL query for each data record
-    # for record in data_to_insert_diseases:
-    #     cursor.execute(sql_insert, record)
+    for record in data_to_insert_diseases:
+        cursor.execute(sql_insert, record)
         
     
     plt.imshow(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
