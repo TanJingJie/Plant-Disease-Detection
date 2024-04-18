@@ -16,12 +16,6 @@ server = 'DESKTOP-I1OSNLL\MSSQLSERVER01'
 database = 'PlantDetection'
 
 
-# Create connection string
-conn_str = f'DRIVER={{SQL Server}};SERVER=DESKTOP-I1OSNLL\\MSSQLSERVER01;DATABASE={database};Trusted_Connection=yes;'
-
-# Connect to the database
-conn = pyodbc.connect(conn_str)
-cursor = conn.cursor()
 
 temp1 = 30
 temp2 = 23
@@ -95,17 +89,18 @@ def get_area_temperature_Fan(desired_area_temperature):
     predicted_Fan_speed = regr.predict([[desired_area_temperature, desired_area_temperature, desired_area_temperature]])
     return predicted_Fan_speed[0]
 
-# User input for desired temperature and fan speed
+# User input for desired temperature and fan speed and mass of crops
+mass = float(input("Enter mass of crops in chamber in kg: "))
 desired_HVAC_temperature = float(input("Enter desired HVAC temperature: "))
 desired_fanspeed = float(input("Enter fan speed: "))
-
 desired_area_temperature =  float(input("Enter desired area temperature: "))
+
 
 def energy (desired_HVAC_temperature, desired_fanspeed):
     
     Q1 = 0.28*121.5*(temp1 - temp2)/1000
-    Q2 = 0.263
-    Q3 = 2.4
+    Q2 = (mass * 3.94) / 3600
+    Q3 = 39.4 #Lighting 
     Q4 = 3 * 91.125 * 2 * (temp1 - temp2 ) / 3600  
 
     HVAC_Q = ((Q1 + Q2 + Q3 + Q4)/4)
@@ -115,6 +110,8 @@ def energy (desired_HVAC_temperature, desired_fanspeed):
     Total_Q = HVAC_Q + Fan_Q
 
     return Total_Q
+    
+    
 
 # Create 3D scatter plot
 fig = plt.figure()
@@ -138,9 +135,13 @@ predicted_Energy = energy(desired_HVAC_temperature, desired_fanspeed)
 predicted_HVAC_Temperature=get_area_temperature_HVAC(desired_area_temperature)
 predicted_Fan_Speed=get_area_temperature_Fan(desired_area_temperature)
 predicted_Best_Efficiency = energy(predicted_HVAC_Temperature, predicted_Fan_Speed)
+energy_cost_hour = (predicted_Best_Efficiency * 32.47 )/100
+energy_cost_yearly = energy_cost_hour * 24 * 365
 print(f"Predicted Area 1 temperature for desired temperature {desired_HVAC_temperature}°C and fan speed {desired_fanspeed}: {predicted_Area1Temp}")
 print(f"Predicted Area 2 temperature for desired temperature {desired_HVAC_temperature}°C and fan speed {desired_fanspeed}: {predicted_Area2Temp}")
 print(f"Predicted Area 3 temperature for desired temperature {desired_HVAC_temperature}°C and fan speed {desired_fanspeed}: {predicted_Area2Temp}")
 print(f"Predicted Energy consumption for desired temperature {desired_HVAC_temperature}°C and fan speed {desired_fanspeed}: {predicted_Energy} kW/hr")
 print(f"Predicted best HVAC temperature and fan speed for area temperature {desired_area_temperature}°C : {predicted_HVAC_Temperature} °C and {predicted_Fan_Speed}m/s")
 print(f"Predicted Energy consumption for desired temperature {predicted_HVAC_Temperature}°C and fan speed {predicted_Fan_Speed}: {predicted_Best_Efficiency} kW/hr")
+print(f"Predicted cost per hour using predicted best efficiency: ${energy_cost_hour}")
+print(f"Predicted cost per year using predicted best efficiency: ${energy_cost_yearly}")
